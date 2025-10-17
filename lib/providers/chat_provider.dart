@@ -363,6 +363,39 @@ class ChatProvider with ChangeNotifier {
     return _api.formatPricing(pricing);
   }
 
+  Future<Map<String, dynamic>> fetchTokenUsage() async {
+    // Calculate token usage from messages
+    int total = _messages.fold(0, (sum, msg) => sum + (msg.tokens ?? 0));
+    DateTime now = DateTime.now();
+    int today = _messages
+        .where((msg) =>
+            msg.timestamp.year == now.year &&
+            msg.timestamp.month == now.month &&
+            msg.timestamp.day == now.day)
+        .fold(0, (sum, msg) => sum + (msg.tokens ?? 0));
+    int month = _messages
+        .where((msg) =>
+            msg.timestamp.year == now.year && msg.timestamp.month == now.month)
+        .fold(0, (sum, msg) => sum + (msg.tokens ?? 0));
+
+    List history = [
+      // Placeholder for real data
+      {'day': 'Вчера', 'usage': 120},
+      {'day': '2 дня назад', 'usage': 95},
+      {'day': '3 дня назад', 'usage': 110},
+    ];
+
+    return {
+      'total': total.toString(),
+      'today': today.toString(),
+      'month': month.toString(),
+      'history': history
+          .map((entry) =>
+              {'day': entry['day'], 'usage': entry['usage'].toString()})
+          .toList(),
+    };
+  }
+
   // Метод экспорта истории
   Future<Map<String, dynamic>> exportHistory() async {
     // Получение статистики из базы данных

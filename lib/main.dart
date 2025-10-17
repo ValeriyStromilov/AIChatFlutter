@@ -8,8 +8,75 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 // Импорт кастомного провайдера для управления состоянием чата
 import 'providers/chat_provider.dart';
+// Импорт провадйера для настроек API провайдера
+import 'providers/settings_provider.dart' as settings_provider;
+// Импорт провайдера для расходов
+import 'providers/expense_provider.dart';
 // Импорт основного экрана чата
 import 'screens/chat_screen.dart';
+// Импорт новых экранов
+import 'screens/about_screen.dart';
+import 'screens/tokens_screen.dart';
+import 'screens/expense_chart_screen.dart';
+import 'screens/settings_screen.dart';
+
+// Определение класса главного экрана приложения
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+  final List<Widget> _children = [
+    ChatScreen(),
+    TokensScreen(),
+    ExpenseChartScreen(),
+    SettingsScreen(),
+    AboutScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _children[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.blue,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.cyan[50],
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat),
+            label: 'Чат',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.generating_tokens_outlined),
+            label: 'Токены',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Расходы',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Настройки',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info),
+            label: 'О приложении',
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // Виджет для обработки и отлова ошибок в приложении
 class ErrorBoundaryWidget extends StatelessWidget {
@@ -125,116 +192,119 @@ class MyApp extends StatelessWidget {
   // Метод построения виджета
   @override
   Widget build(BuildContext context) {
-    // Используем ChangeNotifierProvider для управления состоянием
-    return ChangeNotifierProvider(
-      // Функция создания провайдера
-      create: (_) {
-        try {
-          // Создаем экземпляр ChatProvider
-          return ChatProvider();
-        } catch (e, stackTrace) {
-          // Логирование ошибки создания провайдера
-          debugPrint('Error creating ChatProvider: $e');
-          // Логирование стека вызовов
-          debugPrint('Stack trace: $stackTrace');
-          // Повторный выброс исключения
-          rethrow;
-        }
-      },
-      // Основной виджет MaterialApp
+    // Используем MultiProvider для управления состоянием
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) {
+            try {
+              return ChatProvider();
+            } catch (e, stackTrace) {
+              debugPrint('Error creating ChatProvider: $e');
+              debugPrint('Stack trace: $stackTrace');
+              rethrow;
+            }
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            try {
+              return SettingsProvider();
+            } catch (e, stackTrace) {
+              debugPrint('Error creating SettingsProvider: $e');
+              debugPrint('Stack trace: $stackTrace');
+              rethrow;
+            }
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            try {
+              return ExpenseProvider();
+            } catch (e, stackTrace) {
+              debugPrint('Error creating ExpenseProvider: $e');
+              debugPrint('Stack trace: $stackTrace');
+              rethrow;
+            }
+          },
+        ),
+      ],
       child: MaterialApp(
-        // Настройка поведения прокрутки
         builder: (context, child) {
           return ScrollConfiguration(
             behavior: ScrollBehavior(),
             child: child!,
           );
         },
-        // Заголовок приложения
         title: 'AI Chat',
-        // Скрытие баннера debug
         debugShowCheckedModeBanner: false,
-        // Установка локали по умолчанию (русский)
         locale: const Locale('ru', 'RU'),
-        // Поддерживаемые локали
         supportedLocales: const [
-          Locale('ru', 'RU'), // Русский
-          Locale('en', 'US'), // Английский (США)
+          Locale('ru', 'RU'),
+          Locale('en', 'US'),
         ],
-        // Делегаты для локализации
         localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate, // Локализация Material виджетов
-          GlobalWidgetsLocalizations.delegate, // Локализация базовых виджетов
-          GlobalCupertinoLocalizations
-              .delegate, // Локализация Cupertino виджетов
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
         ],
-        // Настройка темы приложения
         theme: ThemeData(
-          // Цветовая схема на основе синего цвета
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue, // Основной цвет
-            brightness: Brightness.dark, // Темная тема
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
           ),
-          // Использование Material 3
           useMaterial3: true,
-          // Цвет фона Scaffold
           scaffoldBackgroundColor: const Color(0xFF1E1E1E),
-          // Настройка темы AppBar
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF262626), // Цвет фона
-            foregroundColor: Colors.white, // Цвет текста
+            backgroundColor: Color(0xFF262626),
+            foregroundColor: Colors.white,
           ),
-          // Настройка темы диалогов
-          dialogTheme: const DialogTheme(
-            backgroundColor: Color(0xFF333333), // Цвет фона
+          dialogTheme: const DialogThemeData(
+            backgroundColor: Color(0xFF333333),
             titleTextStyle: TextStyle(
-              color: Colors.white, // Цвет заголовка
-              fontSize: 20, // Размер шрифта
-              fontWeight: FontWeight.bold, // Жирный шрифт
-              fontFamily: 'Roboto', // Шрифт
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Roboto',
             ),
             contentTextStyle: TextStyle(
-              color: Colors.white70, // Цвет текста
-              fontSize: 16, // Размер шрифта
-              fontFamily: 'Roboto', // Шрифт
+              color: Colors.white70,
+              fontSize: 16,
+              fontFamily: 'Roboto',
             ),
           ),
-          // Настройка текстовой темы
           textTheme: const TextTheme(
             bodyLarge: TextStyle(
-              fontFamily: 'Roboto', // Шрифт
-              fontSize: 16, // Размер шрифта
-              color: Colors.white, // Цвет текста
+              fontFamily: 'Roboto',
+              fontSize: 16,
+              color: Colors.white,
             ),
             bodyMedium: TextStyle(
-              fontFamily: 'Roboto', // Шрифт
-              fontSize: 14, // Размер шрифта
-              color: Colors.white, // Цвет текста
+              fontFamily: 'Roboto',
+              fontSize: 14,
+              color: Colors.white,
             ),
           ),
-          // Настройка темы кнопок
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white, // Цвет текста
+              foregroundColor: Colors.white,
               textStyle: const TextStyle(
-                fontFamily: 'Roboto', // Шрифт
-                fontSize: 14, // Размер шрифта
+                fontFamily: 'Roboto',
+                fontSize: 14,
               ),
             ),
           ),
-          // Настройка темы текстовых кнопок
           textButtonTheme: TextButtonThemeData(
             style: TextButton.styleFrom(
-              foregroundColor: Colors.white, // Цвет текста
+              foregroundColor: Colors.white,
               textStyle: const TextStyle(
-                fontFamily: 'Roboto', // Шрифт
-                fontSize: 14, // Размер шрифта
+                fontFamily: 'Roboto',
+                fontSize: 14,
               ),
             ),
           ),
         ),
-        // Основной экран приложения
-        home: const ChatScreen(),
+        home: HomeScreen(),
       ),
     );
   }
